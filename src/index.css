@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
+/* 전역 폰트, 배경색, 텍스트 선택 스타일을 정의하는 애플리케이션 CSS 진입점입니다. */
 @theme {
   --font-sans: "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
 }
