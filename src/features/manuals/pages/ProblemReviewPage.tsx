@@ -3,6 +3,7 @@ import Badge from "@/components/ui/Badge"
 import Button from "@/components/ui/Button"
 import Icon from "@/components/ui/Icon"
 import { problemSections } from "@/features/manuals/data/problemSections.mock"
+import { reviewSections } from "@/features/manuals/data/reviewSections.mock"
 import type { ManualDocument } from "@/features/manuals/model/manual.types"
 
 // 생성된 문제를 항목별로 확인하고 임시 저장 또는 승인하는 검수 화면입니다.
@@ -242,30 +243,19 @@ export default function ProblemReviewPage({
       <div className="flex min-h-screen flex-col xl:flex-row">
         <section className="min-w-0 flex-1 bg-white p-5 md:p-8">
           <div className="mx-auto max-w-3xl">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xs font-bold tracking-widest text-slate-400">
-                  AI 생성 문제 · {currentSection + 1}/{sections.length}
-                </div>
-                <div className="mt-2 text-2xl font-black">{section.title}</div>
+            {!isAnalysisOpen && (
+              <div className="mb-6 flex justify-end">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsAnalysisOpen(true)}
+                >
+                  분석 보기
+                </Button>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Badge tone={section.type === "개인" ? "blue" : "purple"}>
-                  {section.type} 단위
-                </Badge>
-                {!isAnalysisOpen && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsAnalysisOpen(true)}
-                  >
-                    분석 보기
-                  </Button>
-                )}
-              </div>
-            </div>
+            )}
 
-            <div className="space-y-4">
-              <div className="rounded-xl border border-slate-200 p-5">
+            <div className="space-y-8">
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500">
                     1
@@ -312,7 +302,7 @@ export default function ProblemReviewPage({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500">
                     2
@@ -329,8 +319,8 @@ export default function ProblemReviewPage({
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 p-5">
+              <div>
+                <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-900 text-xs font-black text-white">
                     3
                   </span>
@@ -338,7 +328,7 @@ export default function ProblemReviewPage({
                     생성된 문제 (예비군 표시용)
                   </span>
                 </div>
-                <div className="mx-5 mb-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
                     <div className="mb-1 text-[10px] font-bold tracking-widest text-slate-400">
                       상황
@@ -394,7 +384,7 @@ export default function ProblemReviewPage({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500">
                     4
@@ -431,7 +421,7 @@ export default function ProblemReviewPage({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500">
                     5
@@ -466,7 +456,7 @@ export default function ProblemReviewPage({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500">
                     6

@@ -3,9 +3,17 @@ import Icon from "@/components/ui/Icon"
 import { navigation } from "@/app/navigation"
 
 // 전체 화면에서 공통으로 사용하는 관리자 사이드바와 접기 동작을 담당합니다.
-type AppSidebarProps = { activeNav: string onNavigate: (label: string) => void }
+type AppSidebarProps = {
+  activeNav: string
+  onNavigate: (label: string) => void
+  userName: string
+}
 
-export default function AppSidebar({ activeNav, onNavigate }: AppSidebarProps) {
+export default function AppSidebar({
+  activeNav,
+  onNavigate,
+  userName,
+}: AppSidebarProps) {
   const [isOpen, setIsOpen] = useState(true)
   return (
     <aside
@@ -24,7 +32,7 @@ export default function AppSidebar({ activeNav, onNavigate }: AppSidebarProps) {
               <Icon name="soldier" />
             </div>
             <div className="min-w-0 flex-1 text-base font-extrabold tracking-tight">
-              TACTIC AI
+              MobiDrill
             </div>
             <button
               type="button"
@@ -108,14 +116,14 @@ export default function AppSidebar({ activeNav, onNavigate }: AppSidebarProps) {
         }`}
       >
         <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-extrabold text-slate-700">
-          김
+          {userName.slice(0, 1)}
         </div>
         {isOpen && (
           <>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-bold">김관리</div>
+              <div className="truncate text-sm font-bold">{userName}</div>
               <div className="truncate text-xs text-slate-400">
-                교육훈련 관리자
+                교육훈련 사용자
               </div>
             </div>
             <Icon name="more" className="size-5 text-slate-400" />

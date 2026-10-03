@@ -1,15 +1,16 @@
 import { useCallback, useRef, useState } from "react"
 import Icon from "@/components/ui/Icon"
-import { documents } from "@/features/manuals/data/manuals.mock"
-import { trainingFields } from "@/features/manuals/data/trainingFields"
 import useOutsideClick from "@/features/manuals/hooks/useOutsideClick"
 import type {
   ManualScope,
   ManualSortOrder,
+  ManualDocument,
 } from "@/features/manuals/model/manual.types"
 
 // 교범 통계, 검색, 분야, 정렬, 상태 범위 필터를 관리합니다.
 type ManualFiltersProps = {
+  documents: ManualDocument[]
+  trainingFields: string[]
   searchQuery: string
   onSearchChange: (value: string) => void
   selectedField: string
@@ -24,6 +25,8 @@ type ManualFiltersProps = {
 }
 
 export default function ManualFilters({
+  documents,
+  trainingFields,
   searchQuery,
   onSearchChange: setSearchQuery,
   selectedField,

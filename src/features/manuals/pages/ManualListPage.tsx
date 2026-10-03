@@ -8,7 +8,6 @@ import ManualPagination from "@/features/manuals/components/ManualPagination"
 import ManualTable from "@/features/manuals/components/ManualTable"
 import ProblemGenerationModal from "@/features/manuals/components/ProblemGenerationModal"
 import ReviewSummaryModal from "@/features/manuals/components/ReviewSummaryModal"
-import { documents } from "@/features/manuals/data/manuals.mock"
 import useManualFilters from "@/features/manuals/hooks/useManualFilters"
 import type {
   ManualDocument,
@@ -17,6 +16,8 @@ import type {
 
 // 교범 목록의 필터, 페이지네이션, 상태별 모달 진입을 조합하는 메인 페이지입니다.
 type ManualListPageProps = {
+  documents: ManualDocument[]
+  trainingFields: string[]
   reviewProgress: Record<string, ReviewProgress>
   problemReviewProgress: Record<string, ReviewProgress>
   onRegister: () => void
@@ -27,7 +28,7 @@ type ManualListPageProps = {
 }
 
 export default function ManualListPage(props: ManualListPageProps) {
-  const filters = useManualFilters(documents)
+  const filters = useManualFilters(props.documents)
   const [selectedExtractionDocument, setSelectedExtractionDocument] =
     useState<ManualDocument | null>(null)
   const [selectedDraftDocument, setSelectedDraftDocument] =
@@ -59,6 +60,8 @@ export default function ManualListPage(props: ManualListPageProps) {
         </div>
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
           <ManualFilters
+            documents={props.documents}
+            trainingFields={["전체 분야", ...props.trainingFields]}
             searchQuery={filters.searchQuery}
             onSearchChange={filters.setSearchQuery}
             selectedField={filters.selectedField}
