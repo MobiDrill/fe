@@ -4,13 +4,15 @@ import useOutsideClick from "@/features/manuals/hooks/useOutsideClick"
 import type {
   ManualScope,
   ManualSortOrder,
-  ManualDocument,
 } from "@/features/manuals/model/manual.types"
+import { manualStatuses } from "../api/manuals.api"
+import type { ManualListMetadata } from "../api/manuals.api"
+import type { TrainingField } from "@/features/training-fields/model/trainingFields"
 
 // 교범 통계, 검색, 분야, 정렬, 상태 범위 필터를 관리합니다.
 type ManualFiltersProps = {
-  documents: ManualDocument[]
-  trainingFields: string[]
+  metadata?: ManualListMetadata
+  trainingFields: TrainingField[]
   searchQuery: string
   onSearchChange: (value: string) => void
   selectedField: string
@@ -25,7 +27,7 @@ type ManualFiltersProps = {
 }
 
 export default function ManualFilters({
-  documents,
+  metadata,
   trainingFields,
   searchQuery,
   onSearchChange: setSearchQuery,
@@ -56,7 +58,9 @@ export default function ManualFilters({
             <span className="text-sm font-semibold text-slate-500">
               전체 교범
             </span>
-            <span className="ml-2 text-lg font-black">{documents.length}</span>
+            <span className="ml-2 text-lg font-black">
+              {metadata?.totalManualCount ?? 0}
+            </span>
           </div>
           <div className="h-6 w-px bg-slate-200"></div>
           <div>
@@ -64,7 +68,7 @@ export default function ManualFilters({
               분석 중
             </span>
             <span className="ml-2 text-lg font-black text-blue-700">
-              {documents.filter((d) => d.state === "추출 중").length}
+              {metadata?.extractionOngoingCount ?? 0}
             </span>
           </div>
           <div className="h-6 w-px bg-slate-200"></div>
@@ -73,7 +77,7 @@ export default function ManualFilters({
               검수 필요
             </span>
             <span className="ml-2 text-lg font-black text-amber-700">
-              {documents.filter((d) => d.state === "검수 필요").length}
+              {metadata?.reviewNeedCount ?? 0}
             </span>
           </div>
           <div className="h-6 w-px bg-slate-200"></div>
@@ -82,7 +86,7 @@ export default function ManualFilters({
               문제 생성 중
             </span>
             <span className="ml-2 text-lg font-black text-blue-700">
-              {documents.filter((d) => d.state === "문제 생성 중").length}
+              {metadata?.questionGenerationOngoingCount ?? 0}
             </span>
           </div>
           <div className="h-6 w-px bg-slate-200"></div>
@@ -91,7 +95,7 @@ export default function ManualFilters({
               문제 검수 필요
             </span>
             <span className="ml-2 text-lg font-black text-violet-700">
-              {documents.filter((d) => d.state === "문제 검수 필요").length}
+              {metadata?.questionReviewNeedCount ?? 0}
             </span>
           </div>
         </div>
@@ -103,16 +107,14 @@ export default function ManualFilters({
                 교범명 검색
               </span>
             )}
-            <div
-              role="textbox"
+            <input
+              type="search"
               aria-label="교범명 검색"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(event) =>
-                setSearchQuery(event.currentTarget.textContent ?? "")
-              }
+              value={searchQuery}
+              maxLength={100}
+              onChange={(event) => setSearchQuery(event.target.value)}
               className="min-w-0 flex-1 text-slate-700 outline-none"
-            ></div>
+            />
           </div>
           <div ref={fieldMenuRef} className="relative w-72">
             <div
@@ -128,7 +130,14 @@ export default function ManualFilters({
                   : "border-slate-200 text-slate-600"
               }`}
             >
-              <span className="max-w-48 truncate">{selectedField}</span>
+              <span className="max-w-48 truncate">
+                {selectedField === "전체 분야"
+                  ? selectedField
+                  : (trainingFields.find(
+                      (field) =>
+                        String(field.trainingFieldId) === selectedField,
+                    )?.name ?? "선택한 분야")}
+              </span>
               <Icon
                 name="chevron"
                 className={`size-4 transition-transform ${
@@ -141,29 +150,32 @@ export default function ManualFilters({
                 <div className="px-3 pb-2 pt-1 text-xs font-bold tracking-wide text-slate-400">
                   훈련 분야 선택
                 </div>
-                {trainingFields.map((field) => (
+                {[
+                  { trainingFieldId: "전체 분야", name: "전체 분야" },
+                  ...trainingFields,
+                ].map((field) => (
                   <div
-                    key={field}
+                    key={field.trainingFieldId}
                     role="button"
                     tabIndex={0}
                     onClick={() => {
-                      setSelectedField(field)
+                      setSelectedField(String(field.trainingFieldId))
                       setIsFieldMenuOpen(false)
                     }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
-                        setSelectedField(field)
+                        setSelectedField(String(field.trainingFieldId))
                         setIsFieldMenuOpen(false)
                       }
                     }}
                     className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                      selectedField === field
+                      selectedField === String(field.trainingFieldId)
                         ? "bg-slate-900 font-bold text-white"
                         : "font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
-                    <span>{field}</span>
-                    {selectedField === field && (
+                    <span>{field.name}</span>
+                    {selectedField === String(field.trainingFieldId) && (
                       <Icon name="check" className="size-4 shrink-0" />
                     )}
                   </div>
@@ -227,32 +239,26 @@ export default function ManualFilters({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 pt-4">
-        <div className="flex gap-6">
-          {([
-            "전체",
-            "임시 저장",
-            "추출 중",
-            "검수 필요",
-            "검수 완료",
-            "문제 생성 중",
-            "문제 검수 필요",
-            "문제 검수 완료",
-          ] as const).map((item) => (
-            <div
-              key={item}
-              role="button"
-              tabIndex={0}
-              onClick={() => setScope(item)}
-              className={`cursor-pointer border-b-2 px-1 pb-4 text-sm font-bold ${
-                scope === item
-                  ? "border-slate-900 text-slate-900"
-                  : "border-transparent text-slate-400"
-              }`}
-            >
-              {item}
-            </div>
-          ))}
+      <div className="flex items-center justify-between gap-4 overflow-x-auto border-b border-slate-100 px-5 pt-4">
+        <div className="flex shrink-0 gap-6">
+          {(["전체", ...Object.values(manualStatuses)] as ManualScope[]).map(
+            (item) => (
+              <div
+                key={item}
+                role="button"
+                tabIndex={0}
+                onClick={() => setScope(item)}
+                onKeyDown={(event) => event.key === "Enter" && setScope(item)}
+                className={`cursor-pointer border-b-2 px-1 pb-4 text-sm font-bold ${
+                  scope === item
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-400"
+                }`}
+              >
+                {item}
+              </div>
+            ),
+          )}
         </div>
         <div className="hidden pb-4 text-xs font-semibold text-slate-400 sm:block">
           총 {sortedDocuments.length}개 중 {rangeStart}–{rangeEnd}

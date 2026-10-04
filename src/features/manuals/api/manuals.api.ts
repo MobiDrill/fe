@@ -1,5 +1,75 @@
 import { authenticatedRequest } from "@/features/auth/api/authenticatedRequest"
 
+export const manualStatuses = {
+  TEMPORARY_SAVED: "임시 저장",
+  EXTRACTION_ONGOING: "추출 중",
+  REVIEW_NEED: "검수 필요",
+  REVIEW_ONGOING: "검수 중",
+  QUESTION_GENERATION_NEED: "검수 완료",
+  QUESTION_GENERATION_ONGOING: "문제 생성 중",
+  QUESTION_REVIEW_NEED: "문제 검수 필요",
+  QUESTION_REVIEW_ONGOING: "문제 검수 중",
+  ABNORMAL_TERMINATION: "비정상 종료",
+} as const
+
+export type ManualApiStatus = keyof typeof manualStatuses
+export type ManualListQuery = {
+  trainingFieldId?: number
+  sort: "LATEST" | "OLDEST"
+  page: number
+  size: number
+  manualTitle?: string
+  manualStatus?: ManualApiStatus
+}
+export type ManualListItem = {
+  manualId: number
+  manualTitle: string
+  fileType: "PDF" | "PPT" | "HWP" | "WORD" | null
+  registeredByName: string | null
+  trainingField: {
+    id: number | null
+    name: string | null
+  } | null
+  manualStatus: ManualApiStatus
+  updatedAt: string | null
+}
+export type ManualListMetadata = {
+  totalManualCount: number
+  extractionOngoingCount: number
+  reviewNeedCount: number
+  questionGenerationOngoingCount: number
+  questionReviewNeedCount: number
+}
+export type ManualListResponse = {
+  metadata: ManualListMetadata
+  manuals: {
+    content: ManualListItem[]
+    page: number
+    size: number
+    totalElements: number
+    totalPages: number
+    hasNext: boolean
+    hasPrevious: boolean
+    nextCursor: null
+  }
+}
+
+export function getManuals(query: ManualListQuery, signal?: AbortSignal) {
+  const params = new URLSearchParams({
+    sort: query.sort,
+    page: String(query.page),
+    size: String(query.size),
+  })
+  if (query.trainingFieldId !== undefined)
+    params.set("trainingFieldId", String(query.trainingFieldId))
+  if (query.manualTitle?.trim())
+    params.set("manualTitle", query.manualTitle.trim())
+  if (query.manualStatus) params.set("manualStatus", query.manualStatus)
+  return authenticatedRequest<ManualListResponse>(`/api/v1/manuals?${params}`, {
+    signal,
+  })
+}
+
 export type ManualRegisterRequest = {
   manualTitle: string
   trainingFieldId: number

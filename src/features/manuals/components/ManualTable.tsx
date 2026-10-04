@@ -64,9 +64,31 @@ export default function ManualTable({
       <div className="divide-y divide-slate-100">
         {paginatedDocuments.map((doc) => (
           <div
-            key={doc.name}
-            role={doc.state !== "문제 검수 완료" ? "button" : undefined}
-            tabIndex={doc.state !== "문제 검수 완료" ? 0 : undefined}
+            key={doc.manualId ?? doc.name}
+            role={
+              [
+                "임시 저장",
+                "추출 중",
+                "검수 필요",
+                "검수 완료",
+                "문제 생성 중",
+                "문제 검수 필요",
+              ].includes(doc.state)
+                ? "button"
+                : undefined
+            }
+            tabIndex={
+              [
+                "임시 저장",
+                "추출 중",
+                "검수 필요",
+                "검수 완료",
+                "문제 생성 중",
+                "문제 검수 필요",
+              ].includes(doc.state)
+                ? 0
+                : undefined
+            }
             onClick={() => {
               if (doc.state === "추출 중") onOpenDocument(doc)
               if (doc.state === "임시 저장") onOpenDocument(doc)
@@ -85,8 +107,21 @@ export default function ManualTable({
               if (doc.state === "문제 검수 필요") onOpenProblemPreview(doc)
             }}
             className={`group relative grid gap-3 px-6 py-5 transition-colors hover:bg-slate-50 md:grid-cols-[minmax(0,2fr)_0.9fr_0.8fr_0.8fr_0.8fr_2rem] md:items-center md:gap-4 ${
-              doc.state !== "문제 검수 완료" ? "cursor-pointer" : ""
-            } ${openDocumentMenu === doc.name ? "z-20 bg-slate-50" : "z-0"}`}
+              [
+                "임시 저장",
+                "추출 중",
+                "검수 필요",
+                "검수 완료",
+                "문제 생성 중",
+                "문제 검수 필요",
+              ].includes(doc.state)
+                ? "cursor-pointer"
+                : ""
+            } ${
+              openDocumentMenu === String(doc.manualId ?? doc.name)
+                ? "z-20 bg-slate-50"
+                : "z-0"
+            }`}
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
@@ -95,7 +130,7 @@ export default function ManualTable({
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold">{doc.name}</div>
                 <div className="mt-1 text-xs text-slate-400">
-                  {doc.type} · 김관리 등록
+                  {doc.type} · {doc.registeredByName ?? "미지정"} 등록
                 </div>
               </div>
             </div>
@@ -258,24 +293,28 @@ export default function ManualTable({
                 onClick={(event) => {
                   event.stopPropagation()
                   setOpenDocumentMenu((current) =>
-                    current === doc.name ? null : doc.name,
+                    current === String(doc.manualId ?? doc.name)
+                      ? null
+                      : String(doc.manualId ?? doc.name),
                   )
                 }}
                 onKeyDown={(event) =>
                   event.key === "Enter" &&
                   setOpenDocumentMenu((current) =>
-                    current === doc.name ? null : doc.name,
+                    current === String(doc.manualId ?? doc.name)
+                      ? null
+                      : String(doc.manualId ?? doc.name),
                   )
                 }
                 className={`flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors ${
-                  openDocumentMenu === doc.name
+                  openDocumentMenu === String(doc.manualId ?? doc.name)
                     ? "bg-slate-200 text-slate-900"
                     : "text-slate-400 hover:bg-slate-200 hover:text-slate-700"
                 }`}
               >
                 <Icon name="more" className="size-5" />
               </div>
-              {openDocumentMenu === doc.name && (
+              {openDocumentMenu === String(doc.manualId ?? doc.name) && (
                 <div className="absolute right-0 top-full z-30 mt-2 w-32 rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/70">
                   {doc.state !== "검수 필요" && (
                     <div

@@ -8,7 +8,8 @@ import ManualPagination from "@/features/manuals/components/ManualPagination"
 import ManualTable from "@/features/manuals/components/ManualTable"
 import ProblemGenerationModal from "@/features/manuals/components/ProblemGenerationModal"
 import ReviewSummaryModal from "@/features/manuals/components/ReviewSummaryModal"
-import useManualFilters from "@/features/manuals/hooks/useManualFilters"
+import useManualList from "@/features/manuals/hooks/useManualList"
+import type { TrainingField } from "@/features/training-fields/model/trainingFields"
 import type {
   ManualDocument,
   ReviewProgress,
@@ -16,8 +17,10 @@ import type {
 
 // 교범 목록의 필터, 페이지네이션, 상태별 모달 진입을 조합하는 메인 페이지입니다.
 type ManualListPageProps = {
-  documents: ManualDocument[]
-  trainingFields: string[]
+  enabled: boolean
+  owner?: number
+  entryRevision: number
+  trainingFields: TrainingField[]
   reviewProgress: Record<string, ReviewProgress>
   problemReviewProgress: Record<string, ReviewProgress>
   onRegister: () => void
@@ -28,7 +31,7 @@ type ManualListPageProps = {
 }
 
 export default function ManualListPage(props: ManualListPageProps) {
-  const filters = useManualFilters(props.documents)
+  const filters = useManualList(props.enabled, props.owner, props.entryRevision)
   const [selectedExtractionDocument, setSelectedExtractionDocument] =
     useState<ManualDocument | null>(null)
   const [selectedDraftDocument, setSelectedDraftDocument] =
@@ -60,8 +63,8 @@ export default function ManualListPage(props: ManualListPageProps) {
         </div>
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
           <ManualFilters
-            documents={props.documents}
-            trainingFields={["전체 분야", ...props.trainingFields]}
+            metadata={filters.metadata}
+            trainingFields={props.trainingFields}
             searchQuery={filters.searchQuery}
             onSearchChange={filters.setSearchQuery}
             selectedField={filters.selectedField}
@@ -70,25 +73,43 @@ export default function ManualListPage(props: ManualListPageProps) {
             onScopeChange={filters.setScope}
             sortOrder={filters.sortOrder}
             onSortChange={filters.setSortOrder}
-            total={filters.sortedDocuments.length}
+            total={filters.total}
             rangeStart={filters.rangeStart}
             rangeEnd={filters.rangeEnd}
           />
-          <ManualTable
-            documents={filters.paginatedDocuments}
-            reviewProgress={props.reviewProgress}
-            problemReviewProgress={props.problemReviewProgress}
-            onOpenDocument={openDocument}
-            onOpenReview={props.onOpenReview}
-            onOpenProblemPreview={props.onOpenProblemPreview}
-            onOpenProblemReview={props.onOpenProblemReview}
-            onNotify={props.onNotify}
-          />
-          <ManualPagination
-            currentPage={filters.currentPage}
-            totalPages={filters.totalPages}
-            onPageChange={filters.setCurrentPage}
-          />
+          {filters.loading ? (
+            <p
+              role="status"
+              className="p-12 text-center text-sm text-slate-500"
+            >
+              교범을 불러오고 있습니다…
+            </p>
+          ) : filters.loadError ? (
+            <div className="p-12 text-center">
+              <p role="alert" className="mb-4 text-sm text-rose-600">
+                {filters.loadError}
+              </p>
+              <Button onClick={filters.reload}>다시 시도</Button>
+            </div>
+          ) : (
+            <ManualTable
+              documents={filters.documents}
+              reviewProgress={props.reviewProgress}
+              problemReviewProgress={props.problemReviewProgress}
+              onOpenDocument={openDocument}
+              onOpenReview={props.onOpenReview}
+              onOpenProblemPreview={props.onOpenProblemPreview}
+              onOpenProblemReview={props.onOpenProblemReview}
+              onNotify={props.onNotify}
+            />
+          )}
+          {!filters.loading && !filters.loadError && (
+            <ManualPagination
+              currentPage={filters.currentPage}
+              totalPages={filters.totalPages}
+              onPageChange={filters.setCurrentPage}
+            />
+          )}
         </section>
       </div>
       <ReviewSummaryModal

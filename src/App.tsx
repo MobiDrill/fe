@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import AppShell from "@/components/layout/AppShell"
 import Toast from "@/components/ui/Toast"
 import ManualListPage from "@/features/manuals/pages/ManualListPage"
@@ -17,7 +17,6 @@ import AuthLayout from "@/features/auth/components/AuthLayout"
 import { useAuth } from "@/features/auth/context/AuthProvider"
 import TrainingFieldsPage from "@/features/training-fields/pages/TrainingFieldsPage"
 import useTrainingFields from "@/features/training-fields/model/trainingFields"
-import { documents as originalDocuments } from "@/features/manuals/data/manuals.mock"
 
 const getScreen = () => {
   if (window.location.hash === "#/signup") return "signup"
@@ -39,31 +38,6 @@ export default function App() {
     auth.user?.userId,
     trainingEntryRevision,
   )
-  const [registeredDocuments, setRegisteredDocuments] =
-    useState<ManualDocument[]>([])
-  const documents = useMemo(
-    () => [
-      ...registeredDocuments.map((document) => ({
-        ...document,
-        field:
-          document.trainingFieldId === null
-            ? "미지정"
-            : (training.fields.find(
-                (field) => field.trainingFieldId === document.trainingFieldId,
-              )?.name ?? document.field),
-      })),
-      ...originalDocuments,
-    ],
-    [training.fields, registeredDocuments],
-  )
-  const fieldNames = [
-    ...new Set([
-      ...training.fields.map((field) => field.name),
-      ...documents
-        .filter((document) => document.trainingFieldId !== undefined)
-        .map((document) => document.field),
-    ]),
-  ]
   const [signupEmail, setSignupEmail] = useState("")
   const [registered, setRegistered] = useState(false)
   const [activeNav, setActiveNav] = useState(() =>
@@ -124,7 +98,6 @@ export default function App() {
     setReviewProgress({})
     setProblemReviewProgress({})
     setNotice("")
-    setRegisteredDocuments([])
   }, [auth.status])
 
   useEffect(() => {
@@ -150,16 +123,7 @@ export default function App() {
           onReload={training.reload}
           onCreate={training.create}
           onUpdate={training.update}
-          onDelete={async (id) => {
-            await training.remove(id)
-            setRegisteredDocuments((previous) =>
-              previous.map((document) =>
-                document.trainingFieldId === id
-                  ? { ...document, trainingFieldId: null, field: "미지정" }
-                  : document,
-              ),
-            )
-          }}
+          onDelete={training.remove}
           onNotify={setNotice}
         />
       )
@@ -172,27 +136,7 @@ export default function App() {
           fieldsError={training.loadError}
           onReloadFields={training.reload}
           onBack={() => navigate("list")}
-          onSave={(manual) => {
-            setRegisteredDocuments((previous) => [
-              {
-                name: manual.manualTitle,
-                version: "—",
-                type:
-                  manual.file.originalName.split(".").pop()?.toUpperCase() ??
-                  manual.file.fileType,
-                field:
-                  training.fields.find(
-                    (field) => field.trainingFieldId === manual.trainingFieldId,
-                  )?.name ?? `훈련 분야 ${manual.trainingFieldId}`,
-                trainingFieldId: manual.trainingFieldId,
-                state: "임시 저장",
-                tone: "neutral",
-                date: new Date().toLocaleString("ko-KR", {
-                  timeZone: "Asia/Seoul",
-                }),
-              },
-              ...previous,
-            ])
+          onSave={() => {
             setNotice("교범이 등록되었습니다.")
             navigate("list")
           }}
@@ -290,8 +234,10 @@ export default function App() {
           </div>
         )}
         <ManualListPage
-          documents={documents}
-          trainingFields={fieldNames}
+          enabled={!auth.loggingOut}
+          owner={auth.user?.userId}
+          entryRevision={trainingEntryRevision}
+          trainingFields={training.fields}
           reviewProgress={reviewProgress}
           problemReviewProgress={problemReviewProgress}
           onRegister={() => navigate("register")}

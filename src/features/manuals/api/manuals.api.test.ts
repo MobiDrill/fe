@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest"
-import { registerManual } from "./manuals.api"
+import { getManuals, registerManual } from "./manuals.api"
 import * as session from "@/features/auth/model/auth.session"
 
 const response = (data: unknown, status = 200, message = "완료") =>
@@ -8,6 +8,54 @@ const response = (data: unknown, status = 200, message = "완료") =>
 afterEach(() => {
   session.clearSession()
   vi.unstubAllGlobals()
+})
+
+it("필수 페이지 조건과 선택 검색 조건을 인코딩해 인증된 조회 요청으로 전달한다", async () => {
+  const data = { metadata: { totalManualCount: 32 }, manuals: { content: [] } }
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(
+      response({
+        userId: 1,
+        name: "관리자",
+        email: "admin@example.com",
+        accessToken: "access",
+        refreshToken: "refresh",
+      }),
+    )
+    .mockImplementation(async () => response(data))
+  vi.stubGlobal("fetch", fetchMock)
+  await session.login({ email: "admin@example.com", password: "password" })
+  const controller = new AbortController()
+  await expect(
+    getManuals(
+      {
+        sort: "OLDEST",
+        page: 2,
+        size: 10,
+        manualTitle: "  교범 & 안전  ",
+        trainingFieldId: 3,
+        manualStatus: "REVIEW_ONGOING",
+      },
+      controller.signal,
+    ),
+  ).resolves.toEqual(data)
+  const [path, init] = fetchMock.mock.calls[1]
+  const params = new URL(path, "http://localhost").searchParams
+  expect(Object.fromEntries(params)).toEqual({
+    sort: "OLDEST",
+    page: "2",
+    size: "10",
+    manualTitle: "교범 & 안전",
+    trainingFieldId: "3",
+    manualStatus: "REVIEW_ONGOING",
+  })
+  expect(init.headers.get("Authorization")).toBe("Bearer access")
+  expect(init.signal).toBe(controller.signal)
+  await getManuals({ sort: "LATEST", page: 1, size: 10, manualTitle: "   " })
+  expect(fetchMock.mock.calls[2][0]).toBe(
+    "/api/v1/manuals?sort=LATEST&page=1&size=10",
+  )
 })
 
 it("JSON 파트와 원본 파일을 전송하고 401 이후 동일 파일을 새 토큰으로 재시도한다", async () => {
